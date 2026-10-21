@@ -64,8 +64,8 @@ function LoginPageInner() {
             {[
               { text: 'Pencatatan panen per tray & butir' },
               { text: 'Monitoring stok pakan & hari habis' },
-              { text: 'Laporan keuangan ekspor ke CSV & cetak' },
-              { text: 'Import riwayat panen berbasis template' },
+              { text: 'Laporan keuangan ekspor ke Excel (.xlsx) & cetak' },
+              { text: 'Kalkulasi otomatis laba-rugi & margin' },
             ].map(({ text }) => (
               <div key={text} className="flex items-center gap-2">
                 <CheckCircle2 size={15} className="text-emerald-600 flex-shrink-0" />

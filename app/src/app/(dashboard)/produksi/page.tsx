@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import {
   Plus,
-  Upload,
   Filter,
   Search,
   Download,
@@ -12,16 +11,14 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 import { Card, Button, Input, Badge } from '@/components/ui';
-import CSVUploader from '@/components/features/CSVUploader';
 import { useAppState } from '@/lib/AppState';
 import { formatNumber, toISODate, calculateTotalEggs } from '@/lib/utils';
-import { downloadCSVTemplate } from '@/lib/csvTemplates';
+import { exportProduksiExcel } from '@/lib/exportUtils';
 
 export default function ProduksiPage() {
-  const { productions, addProduction, bulkAddProductions } = useAppState();
+  const { productions, addProduction } = useAppState();
 
   const [showForm, setShowForm] = useState(false);
-  const [showCSV, setShowCSV] = useState(false);
   const [filterDate, setFilterDate] = useState('');
   const [searchQ, setSearchQ] = useState('');
 
@@ -54,31 +51,7 @@ export default function ProduksiPage() {
   };
 
   const handleExportProduksi = () => {
-    const headers = ['Tanggal', 'Jumlah Tray', 'Butir Lepas', 'Butir Rusak', 'Total Butir', 'Berat Total (kg)', 'Persentase Rusak (%)', 'Catatan'];
-    const rows = filtered.map(p => {
-      const brokenRate = p.total_eggs > 0 ? ((p.broken_eggs / (p.total_eggs + p.broken_eggs)) * 100).toFixed(1) : '0';
-      return [
-        p.date,
-        p.egg_trays,
-        p.loose_eggs,
-        p.broken_eggs,
-        p.total_eggs,
-        p.total_weight_kg,
-        `${brokenRate}%`,
-        `"${(p.notes || '').replace(/"/g, '""')}"`,
-      ].join(',');
-    });
-
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n') + '\r\n';
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `data_produksi_telur_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    exportProduksiExcel(filtered);
   };
 
   const filtered = productions.filter(p => {
@@ -108,20 +81,7 @@ export default function ProduksiPage() {
             onClick={handleExportProduksi}
           >
             <Download size={14} />
-            Export CSV
-          </Button>
-
-          <Button
-            id="btn-import-csv-produksi"
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setShowCSV(!showCSV);
-              setShowForm(false);
-            }}
-          >
-            <Upload size={14} />
-            Import CSV
+            Export Excel
           </Button>
 
           <Button
@@ -129,7 +89,6 @@ export default function ProduksiPage() {
             size="sm"
             onClick={() => {
               setShowForm(!showForm);
-              setShowCSV(false);
             }}
           >
             <Plus size={14} />
@@ -137,33 +96,6 @@ export default function ProduksiPage() {
           </Button>
         </div>
       </div>
-
-      {/* CSV Uploader */}
-      {showCSV && (
-        <Card padding="md">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
-              Import Data Produksi Telur dari CSV
-            </h3>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => downloadCSVTemplate('produksi')}
-              className="text-xs"
-            >
-              <Download size={13} />
-              Unduh Template Produksi
-            </Button>
-          </div>
-          <CSVUploader
-            templateType="produksi"
-            onDataParsed={(data) => {
-              bulkAddProductions(data);
-              setShowCSV(false);
-            }}
-          />
-        </Card>
-      )}
 
       {/* Form Input */}
       {showForm && (

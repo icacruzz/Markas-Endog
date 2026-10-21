@@ -1,7 +1,7 @@
-import type { Transaction } from '@/types';
-import { formatRupiah } from '@/lib/utils';
+import * as XLSX from 'xlsx';
+import type { Transaction, EggProduction, FeedInventory } from '@/types';
 
-interface ExportCSVOptions {
+interface ExportExcelOptions {
   filename?: string;
   startDate?: string;
   endDate?: string;
@@ -9,15 +9,15 @@ interface ExportCSVOptions {
 }
 
 /**
- * Exports financial transactions to an Excel-friendly CSV with UTF-8 BOM
- * and an executive summary ledger at the bottom.
+ * Exports financial transactions to an Excel (.xlsx) file
+ * with an executive summary ledger at the bottom.
  */
-export function exportTransactionsCSV(
+export function exportTransactionsExcel(
   transactions: Transaction[],
-  options: ExportCSVOptions = {}
+  options: ExportExcelOptions = {}
 ) {
   const {
-    filename = `laporan_keuangan_markas_endog_${new Date().toISOString().split('T')[0]}.csv`,
+    filename = `laporan_keuangan_markas_endog_${new Date().toISOString().split('T')[0]}.xlsx`,
     startDate,
     endDate,
     filterType = 'all',
@@ -39,31 +39,18 @@ export function exportTransactionsCSV(
   const totalExpense = filtered.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   const netProfit = totalIncome - totalExpense;
 
-  const escapeCell = (val: string | number) => {
-    const str = String(val ?? '');
-    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-      return `"${str.replace(/"/g, '""')}"`;
-    }
-    return str;
-  };
+  const rows: (string | number)[][] = [
+    ['MARKAS ENDOG - SISTEM INFORMASI PETERNAKAN AYAM PETELUR'],
+    ['Laporan Rekapitulasi Arus Kas & Keuangan'],
+    [`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`],
+    [`Periode: ${startDate || 'Awal'} s.d. ${endDate || 'Sekarang'} | Filter: ${filterType.toUpperCase()}`],
+    [],
+    ['No', 'Tanggal', 'Tipe', 'Kategori', 'Keterangan', 'Pemasukan (IDR)', 'Pengeluaran (IDR)', 'Nominal Bersih (IDR)'],
+  ];
 
-  const rows: string[] = [];
-
-  // Metadata headers
-  rows.push(['MARKAS ENDOG - SISTEM INFORMASI PETERNAKAN AYAM PETELUR'].map(escapeCell).join(','));
-  rows.push(['Laporan Rekapitulasi Arus Kas & Keuangan'].map(escapeCell).join(','));
-  rows.push([`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`].map(escapeCell).join(','));
-  rows.push([`Periode: ${startDate || 'Awal'} s.d. ${endDate || 'Sekarang'} | Filter: ${filterType.toUpperCase()}`].map(escapeCell).join(','));
-  rows.push(''); // empty spacer
-
-  // Table Columns
-  const headers = ['No', 'Tanggal', 'Tipe', 'Kategori', 'Keterangan', 'Pemasukan (IDR)', 'Pengeluaran (IDR)', 'Nominal Bersih (IDR)'];
-  rows.push(headers.map(escapeCell).join(','));
-
-  // Data rows
   filtered.forEach((tx, idx) => {
     const isIncome = tx.type === 'income';
-    const row = [
+    rows.push([
       idx + 1,
       tx.date,
       isIncome ? 'Pemasukan' : 'Pengeluaran',
@@ -72,29 +59,143 @@ export function exportTransactionsCSV(
       isIncome ? tx.amount : 0,
       !isIncome ? tx.amount : 0,
       isIncome ? tx.amount : -tx.amount,
-    ];
-    rows.push(row.map(escapeCell).join(','));
+    ]);
   });
 
-  // Footer summary
-  rows.push('');
-  rows.push(['', '', '', '', 'RINGKASAN TOTAL', '', '', ''].map(escapeCell).join(','));
-  rows.push(['', '', '', '', 'Total Pemasukan', totalIncome, '', ''].map(escapeCell).join(','));
-  rows.push(['', '', '', '', 'Total Pengeluaran', '', totalExpense, ''].map(escapeCell).join(','));
-  rows.push(['', '', '', '', 'Laba / (Rugi) Bersih', '', '', netProfit].map(escapeCell).join(','));
-  rows.push(['', '', '', '', 'Status Keuangan', '', '', netProfit >= 0 ? 'SURPLUS' : 'DEFISIT'].map(escapeCell).join(','));
+  rows.push([]);
+  rows.push(['', '', '', '', 'RINGKASAN TOTAL', '', '', '']);
+  rows.push(['', '', '', '', 'Total Pemasukan', totalIncome, '', '']);
+  rows.push(['', '', '', '', 'Total Pengeluaran', '', totalExpense, '']);
+  rows.push(['', '', '', '', 'Laba / (Rugi) Bersih', '', '', netProfit]);
+  rows.push(['', '', '', '', 'Status Keuangan', '', '', netProfit >= 0 ? 'SURPLUS' : 'DEFISIT']);
 
-  // Build CSV with UTF-8 BOM
-  const csvContent = '\uFEFF' + rows.join('\r\n') + '\r\n';
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  link.setAttribute('download', filename);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  ws['!cols'] = [
+    { wch: 6 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 22 },
+    { wch: 32 },
+    { wch: 18 },
+    { wch: 18 },
+    { wch: 20 },
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Laporan Keuangan');
+  XLSX.writeFile(wb, filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`);
+}
+
+// Backward-compatibility alias
+export const exportTransactionsCSV = exportTransactionsExcel;
+
+/**
+ * Exports daily egg production to an Excel (.xlsx) file
+ */
+export function exportProduksiExcel(
+  productions: EggProduction[],
+  filename = `data_produksi_telur_${new Date().toISOString().split('T')[0]}.xlsx`
+) {
+  const headers = [
+    'Tanggal',
+    'Jumlah Tray',
+    'Butir Lepas',
+    'Butir Rusak',
+    'Total Butir',
+    'Total Berat (kg)',
+    'Rasio Rusak (%)',
+    'Catatan',
+  ];
+
+  const rows: (string | number)[][] = [
+    ['MARKAS ENDOG - DATA PRODUKSI TELUR HARIAN'],
+    [`Tanggal Unduh: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`],
+    [],
+    headers,
+  ];
+
+  productions.forEach(p => {
+    const brokenRate = p.total_eggs > 0 ? ((p.broken_eggs / p.total_eggs) * 100).toFixed(1) : '0';
+    rows.push([
+      p.date,
+      p.egg_trays,
+      p.loose_eggs,
+      p.broken_eggs,
+      p.total_eggs,
+      p.total_weight_kg,
+      Number(brokenRate),
+      p.notes || '-',
+    ]);
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 30 },
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Produksi Telur');
+  XLSX.writeFile(wb, filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`);
+}
+
+/**
+ * Exports feed inventory purchases to an Excel (.xlsx) file
+ */
+export function exportInventarisExcel(
+  feedInventory: FeedInventory[],
+  filename = `riwayat_pembelian_pakan_${new Date().toISOString().split('T')[0]}.xlsx`
+) {
+  const headers = [
+    'Tanggal',
+    'Jenis Pakan',
+    'Jumlah (kg)',
+    'Harga per kg (IDR)',
+    'Total Harga (IDR)',
+    'Supplier',
+    'Catatan',
+  ];
+
+  const rows: (string | number)[][] = [
+    ['MARKAS ENDOG - RIWAYAT PEMBELIAN PAKAN AYAM'],
+    [`Tanggal Unduh: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`],
+    [],
+    headers,
+  ];
+
+  feedInventory.forEach(f => {
+    rows.push([
+      f.date,
+      f.feed_type,
+      f.quantity_kg,
+      f.price_per_kg,
+      f.total_price,
+      f.supplier || '-',
+      f.notes || '-',
+    ]);
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [
+    { wch: 14 },
+    { wch: 22 },
+    { wch: 14 },
+    { wch: 20 },
+    { wch: 20 },
+    { wch: 24 },
+    { wch: 30 },
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Inventaris Pakan');
+  XLSX.writeFile(wb, filename.endsWith('.xlsx') ? filename : `${filename}.xlsx`);
 }
 
 /**

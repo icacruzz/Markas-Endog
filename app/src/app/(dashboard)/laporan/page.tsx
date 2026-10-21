@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react';
 import {
   Plus,
-  Upload,
   TrendingUp,
   TrendingDown,
   DollarSign,
@@ -16,11 +15,9 @@ import {
 } from 'lucide-react';
 import { Card, Button, Input, Select, SummaryCard, Badge, Modal } from '@/components/ui';
 import { FinancialAreaChart } from '@/components/features/Charts';
-import CSVUploader from '@/components/features/CSVUploader';
 import { useAppState } from '@/lib/AppState';
 import { formatRupiah, toISODate, getMonthName } from '@/lib/utils';
-import { exportTransactionsCSV, printLaporanKeuangan } from '@/lib/exportUtils';
-import { downloadCSVTemplate } from '@/lib/csvTemplates';
+import { exportTransactionsExcel, printLaporanKeuangan } from '@/lib/exportUtils';
 
 const INCOME_CATEGORIES = [
   { value: 'Penjualan Telur', label: 'Penjualan Telur' },
@@ -39,10 +36,9 @@ const EXPENSE_CATEGORIES = [
 ];
 
 export default function LaporanPage() {
-  const { transactions, marketPrices, addTransaction, addMarketPrice, bulkAddTransactions } = useAppState();
+  const { transactions, marketPrices, addTransaction, addMarketPrice } = useAppState();
 
   const [showForm, setShowForm] = useState(false);
-  const [showCSV, setShowCSV] = useState(false);
   const [showPriceForm, setShowPriceForm] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
 
@@ -147,7 +143,7 @@ export default function LaporanPage() {
   };
 
   const handleTriggerExport = () => {
-    exportTransactionsCSV(transactions, {
+    exportTransactionsExcel(transactions, {
       filterType: exportFilterType,
       startDate: exportStartDate || undefined,
       endDate: exportEndDate || undefined,
@@ -182,27 +178,12 @@ export default function LaporanPage() {
           </Button>
 
           <Button
-            id="btn-import-csv-laporan"
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setShowCSV(!showCSV);
-              setShowForm(false);
-              setShowPriceForm(false);
-            }}
-          >
-            <Upload size={14} />
-            Import CSV
-          </Button>
-
-          <Button
             id="btn-harga-pasar"
             variant="ghost"
             size="sm"
             onClick={() => {
               setShowPriceForm(!showPriceForm);
               setShowForm(false);
-              setShowCSV(false);
             }}
           >
             <BarChart2 size={14} />
@@ -214,7 +195,6 @@ export default function LaporanPage() {
             size="sm"
             onClick={() => {
               setShowForm(!showForm);
-              setShowCSV(false);
               setShowPriceForm(false);
             }}
           >
@@ -264,32 +244,7 @@ export default function LaporanPage() {
         <FinancialAreaChart data={monthlyData} />
       </Card>
 
-      {/* CSV Uploader */}
-      {showCSV && (
-        <Card padding="md">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
-              Import Riwayat Transaksi dari CSV
-            </h3>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => downloadCSVTemplate('transaksi')}
-              className="text-xs"
-            >
-              <Download size={13} />
-              Unduh Template Transaksi
-            </Button>
-          </div>
-          <CSVUploader
-            templateType="transaksi"
-            onDataParsed={(data) => {
-              bulkAddTransactions(data);
-              setShowCSV(false);
-            }}
-          />
-        </Card>
-      )}
+
 
       {/* Market Price Form */}
       {showPriceForm && (
@@ -504,14 +459,14 @@ export default function LaporanPage() {
             id="btn-quick-export"
             variant="ghost"
             size="sm"
-            onClick={() => exportTransactionsCSV(filtered, {
-              filename: `laporan_transaksi_${filterMonth !== 'all' ? filterMonth : 'semua'}.csv`,
+            onClick={() => exportTransactionsExcel(filtered, {
+              filename: `laporan_transaksi_${filterMonth !== 'all' ? filterMonth : 'semua'}.xlsx`,
               filterType,
             })}
-            title="Download CSV tabel saat ini"
+            title="Download Excel tabel saat ini"
           >
             <Download size={13} />
-            CSV
+            Excel
           </Button>
 
           <Button
@@ -610,7 +565,7 @@ export default function LaporanPage() {
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
         title="Export Laporan Keuangan"
-        description="Unduh data laporan ke dalam format spreadsheet CSV (kompatibel Microsoft Excel & Google Sheets) atau cetak laporan."
+        description="Unduh data laporan ke dalam format spreadsheet Excel (.xlsx) atau cetak laporan."
       >
         <div className="space-y-4">
           <div>
@@ -658,7 +613,7 @@ export default function LaporanPage() {
 
           <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border text-xs space-y-1 text-slate-500">
             <p className="font-semibold text-slate-700 dark:text-slate-300">Format File Export:</p>
-            <p>• Menggunakan UTF-8 BOM agar angka nominal & tanggal terbaca otomatis oleh Excel tanpa error encoding.</p>
+            <p>• File berekstensi Microsoft Excel (.xlsx) langsung kompatibel dengan Excel, Google Sheets, & WPS Office.</p>
             <p>• Menyertakan baris ringkasan total pemasukan, pengeluaran, dan status surplus/defisit di bagian akhir file.</p>
           </div>
 
@@ -679,7 +634,7 @@ export default function LaporanPage() {
               onClick={handleTriggerExport}
             >
               <Download size={14} />
-              Download CSV (.csv)
+              Download Excel (.xlsx)
             </Button>
           </div>
         </div>

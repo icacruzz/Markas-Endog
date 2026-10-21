@@ -72,8 +72,6 @@ interface AppStateContextType {
   addFeedUsage: (data: Omit<FeedUsage, 'id' | 'user_id' | 'created_at'>) => void;
   addTransaction: (data: Omit<Transaction, 'id' | 'user_id' | 'created_at'>) => void;
   addMarketPrice: (data: Omit<MarketPrice, 'id' | 'user_id' | 'created_at'>) => void;
-  bulkAddProductions: (rows: Record<string, string>[]) => void;
-  bulkAddTransactions: (rows: Record<string, string>[]) => void;
   getFeedStockKg: () => number;
   getAvgDailyUsage: () => number;    // mengembalikan target jika diset, atau rata-rata historis
   getAutoAvgDailyUsage: () => number; // selalu rata-rata historis murni
@@ -162,41 +160,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setMarketPrices((prev) => [newRecord, ...prev]);
   };
 
-  const bulkAddProductions = (rows: Record<string, string>[]) => {
-    const newItems = rows.map((row, i): EggProduction => {
-      const trays = parseInt(row['egg_tray'] || row['tray'] || '0');
-      const loose = parseInt(row['butir_lepas'] || row['loose'] || '0');
-      const broken = parseInt(row['butir_rusak'] || row['broken'] || '0');
-      const weight = parseFloat(row['berat_kg'] || row['berat'] || '0');
-      return {
-        id: `pcsv${Date.now()}${i}`,
-        user_id: 'u1',
-        date: row['tanggal'] || row['date'] || new Date().toISOString().split('T')[0],
-        egg_trays: trays,
-        loose_eggs: loose,
-        broken_eggs: broken,
-        total_weight_kg: weight,
-        total_eggs: calculateTotalEggs(trays, loose),
-        created_at: new Date().toISOString(),
-      };
-    });
-    setProductions((prev) => [...newItems, ...prev]);
-  };
-
-  const bulkAddTransactions = (rows: Record<string, string>[]) => {
-    const newItems = rows.map((row, i): Transaction => ({
-      id: `tcsv${Date.now()}${i}`,
-      user_id: 'u1',
-      date: row['tanggal'] || row['date'] || new Date().toISOString().split('T')[0],
-      type: (row['tipe'] || row['type'] || 'income').toLowerCase().includes('expense') ? 'expense' : 'income',
-      category: row['kategori'] || row['category'] || 'Lainnya',
-      amount: parseInt(row['jumlah'] || row['amount'] || '0'),
-      description: row['keterangan'] || row['description'] || '',
-      created_at: new Date().toISOString(),
-    }));
-    setTransactions((prev) => [...newItems, ...prev]);
-  };
-
   return (
     <AppStateContext.Provider value={{
       productions,
@@ -211,8 +174,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       addFeedUsage,
       addTransaction,
       addMarketPrice,
-      bulkAddProductions,
-      bulkAddTransactions,
       getFeedStockKg,
       getAvgDailyUsage,
       getAutoAvgDailyUsage,

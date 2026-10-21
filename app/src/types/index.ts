@@ -96,20 +96,3 @@ export interface MonthlyFinancialData {
   pengeluaran: number;
   laba: number;
 }
-
-// CSV row types
-export interface ProductionCSVRow {
-  tanggal: string;
-  egg_tray: string;
-  butir_lepas: string;
-  butir_rusak: string;
-  berat_kg: string;
-}
-
-export interface TransactionCSVRow {
-  tanggal: string;
-  tipe: string;
-  kategori: string;
-  jumlah: string;
-  keterangan: string;
-}

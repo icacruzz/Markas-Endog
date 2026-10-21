@@ -19,7 +19,7 @@ import { Card, Button, Input, Select, Alert, SummaryCard, Badge } from '@/compon
 import { SimpleLine } from '@/components/features/Charts';
 import { useAppState } from '@/lib/AppState';
 import { formatRupiah, calculateFeedDaysLeft, toISODate } from '@/lib/utils';
-import { downloadCSVTemplate } from '@/lib/csvTemplates';
+import { exportInventarisExcel } from '@/lib/exportUtils';
 
 const FEED_TYPES = [
   { value: 'Pakan Layer A', label: 'Pakan Layer A' },
@@ -131,27 +131,7 @@ export default function InventarisPage() {
   };
 
   const handleExportFeedInventory = () => {
-    const headers = ['Tanggal', 'Jenis Pakan', 'Jumlah (kg)', 'Harga / kg (IDR)', 'Total Biaya (IDR)', 'Supplier', 'Catatan'];
-    const rows = feedInventory.map(f => [
-      f.date,
-      `"${f.feed_type}"`,
-      f.quantity_kg,
-      f.price_per_kg,
-      f.total_price,
-      `"${f.supplier || '-'}"`,
-      `"${(f.notes || '').replace(/"/g, '""')}"`,
-    ].join(','));
-
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n') + '\r\n';
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `riwayat_pembelian_pakan_${toISODate()}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    exportInventarisExcel(feedInventory);
   };
 
   return (
@@ -168,23 +148,13 @@ export default function InventarisPage() {
         </div>
         <div className="flex gap-2 flex-wrap items-center">
           <Button
-            id="btn-template-pakan"
-            variant="ghost"
-            size="sm"
-            onClick={() => downloadCSVTemplate('inventaris')}
-            title="Download Template Format CSV Pakan"
-          >
-            <Download size={14} />
-            Template CSV
-          </Button>
-          <Button
             id="btn-export-pakan"
             variant="secondary"
             size="sm"
             onClick={handleExportFeedInventory}
           >
             <Download size={14} />
-            Export Data
+            Export Excel
           </Button>
           <Button
             id="btn-pengaturan-pemakaian"
