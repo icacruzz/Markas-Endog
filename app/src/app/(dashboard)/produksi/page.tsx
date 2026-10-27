@@ -10,7 +10,7 @@ import {
   Layers,
   FileSpreadsheet,
 } from 'lucide-react';
-import { Card, Button, Input, Badge } from '@/components/ui';
+import { Card, Button, Input, Badge, Modal } from '@/components/ui';
 import { useAppState } from '@/lib/AppState';
 import { formatNumber, toISODate, calculateTotalEggs } from '@/lib/utils';
 import { exportProduksiExcel } from '@/lib/exportUtils';
@@ -97,103 +97,105 @@ export default function ProduksiPage() {
         </div>
       </div>
 
-      {/* Form Input */}
-      {showForm && (
-        <Card padding="md">
-          <h3 className="font-bold text-sm mb-4" style={{ color: 'var(--text-primary)' }}>
-            Input Catatan Panen Baru
-          </h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                id="prod-date"
-                label="Tanggal Panen"
-                type="date"
-                value={form.date}
-                onChange={e => setForm({ ...form, date: e.target.value })}
-                required
-              />
-              <Input
-                id="prod-weight"
-                label="Berat Total (kg)"
-                type="number"
-                step="0.1"
-                placeholder="Contoh: 72.5"
-                value={form.total_weight_kg}
-                onChange={e => setForm({ ...form, total_weight_kg: e.target.value })}
-                required
-              />
-              <Input
-                id="prod-trays"
-                label="Jumlah Egg Tray (1 tray = 30 butir)"
-                type="number"
-                placeholder="Contoh: 48"
-                value={form.egg_trays}
-                onChange={e => setForm({ ...form, egg_trays: e.target.value })}
-                required
-              />
-              <Input
-                id="prod-loose"
-                label="Butir Lepas (di luar tray)"
-                type="number"
-                placeholder="Contoh: 12"
-                value={form.loose_eggs}
-                onChange={e => setForm({ ...form, loose_eggs: e.target.value })}
-              />
-              <Input
-                id="prod-broken"
-                label="Butir Rusak / Retak"
-                type="number"
-                placeholder="Contoh: 8"
-                value={form.broken_eggs}
-                onChange={e => setForm({ ...form, broken_eggs: e.target.value })}
-              />
-
-              {/* Auto-calculated total */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                  Total Butir Otomatis
-                </label>
-                <div
-                  className="w-full px-3 py-2 rounded-lg text-sm border flex items-center justify-between font-mono font-semibold"
-                  style={{
-                    background: 'rgba(234, 88, 12, 0.05)',
-                    borderColor: 'rgba(234, 88, 12, 0.3)',
-                    color: '#ea580c',
-                  }}
-                >
-                  <span>{formatNumber(computedTotal)} butir</span>
-                  {parseInt(form.egg_trays) > 0 && (
-                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                      ({form.egg_trays} tray × 30 + {form.loose_eggs || 0} lepas)
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
+      {/* Modal Form Input Panen */}
+      <Modal
+        isOpen={showForm}
+        onClose={() => setShowForm(false)}
+        title="Input Catatan Panen Baru"
+        description="Isi data hasil panen hari ini dengan lengkap"
+        maxWidth="lg"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              id="prod-notes"
-              label="Catatan Tambahan (opsional)"
-              placeholder="Catatan kondisi kandang atau cuaca..."
-              value={form.notes}
-              onChange={e => setForm({ ...form, notes: e.target.value })}
+              id="prod-date"
+              label="Tanggal Panen"
+              type="date"
+              value={form.date}
+              onChange={e => setForm({ ...form, date: e.target.value })}
+              required
+            />
+            <Input
+              id="prod-weight"
+              label="Berat Total (kg)"
+              type="number"
+              step="0.1"
+              placeholder="Contoh: 72.5"
+              value={form.total_weight_kg}
+              onChange={e => setForm({ ...form, total_weight_kg: e.target.value })}
+              required
+            />
+            <Input
+              id="prod-trays"
+              label="Jumlah Egg Tray (1 tray = 30 butir)"
+              type="number"
+              placeholder="Contoh: 48"
+              value={form.egg_trays}
+              onChange={e => setForm({ ...form, egg_trays: e.target.value })}
+              required
+            />
+            <Input
+              id="prod-loose"
+              label="Butir Lepas (di luar tray)"
+              type="number"
+              placeholder="Contoh: 12"
+              value={form.loose_eggs}
+              onChange={e => setForm({ ...form, loose_eggs: e.target.value })}
+            />
+            <Input
+              id="prod-broken"
+              label="Butir Rusak / Retak"
+              type="number"
+              placeholder="Contoh: 8"
+              value={form.broken_eggs}
+              onChange={e => setForm({ ...form, broken_eggs: e.target.value })}
             />
 
-            <div className="flex gap-2 pt-1">
-              <Button id="btn-simpan-produksi" type="submit">Simpan Catatan Panen</Button>
-              <Button
-                id="btn-batal-produksi"
-                variant="secondary"
-                type="button"
-                onClick={() => setShowForm(false)}
+            {/* Auto-calculated total */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                Total Butir Otomatis
+              </label>
+              <div
+                className="w-full px-3 py-2 rounded-lg text-sm border flex items-center justify-between font-mono font-semibold"
+                style={{
+                  background: 'rgba(234, 88, 12, 0.05)',
+                  borderColor: 'rgba(234, 88, 12, 0.3)',
+                  color: '#ea580c',
+                }}
               >
-                Batal
-              </Button>
+                <span>{formatNumber(computedTotal)} butir</span>
+                {parseInt(form.egg_trays) > 0 && (
+                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                    ({form.egg_trays} tray × 30 + {form.loose_eggs || 0} lepas)
+                  </span>
+                )}
+              </div>
             </div>
-          </form>
-        </Card>
-      )}
+          </div>
+
+          <Input
+            id="prod-notes"
+            label="Catatan Tambahan (opsional)"
+            placeholder="Catatan kondisi kandang atau cuaca..."
+            value={form.notes}
+            onChange={e => setForm({ ...form, notes: e.target.value })}
+          />
+
+          <div className="flex gap-2 pt-1">
+            <Button id="btn-simpan-produksi" type="submit">Simpan Catatan Panen</Button>
+            <Button
+              id="btn-batal-produksi"
+              variant="secondary"
+              type="button"
+              onClick={() => setShowForm(false)}
+            >
+              Batal
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
 
       {/* Filter & Search */}
       <div className="flex flex-col sm:flex-row gap-2.5">

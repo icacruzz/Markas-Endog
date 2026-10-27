@@ -15,7 +15,7 @@ import {
   SlidersHorizontal,
   FileSpreadsheet,
 } from 'lucide-react';
-import { Card, Button, Input, Select, Alert, SummaryCard, Badge } from '@/components/ui';
+import { Card, Button, Input, Select, Alert, SummaryCard, Badge, Modal } from '@/components/ui';
 import { SimpleLine } from '@/components/features/Charts';
 import { useAppState } from '@/lib/AppState';
 import { formatRupiah, calculateFeedDaysLeft, toISODate } from '@/lib/utils';
@@ -160,7 +160,7 @@ export default function InventarisPage() {
             id="btn-pengaturan-pemakaian"
             variant="secondary"
             size="sm"
-            onClick={() => { setShowSettings(!showSettings); setShowBuyForm(false); setShowUsageForm(false); }}
+            onClick={() => { setShowSettings(true); setShowBuyForm(false); setShowUsageForm(false); }}
           >
             <Settings2 size={14} />
             Target Pemakaian
@@ -169,7 +169,7 @@ export default function InventarisPage() {
             id="btn-catat-pemakaian"
             variant="secondary"
             size="sm"
-            onClick={() => { setShowUsageForm(!showUsageForm); setShowBuyForm(false); setShowSettings(false); }}
+            onClick={() => { setShowUsageForm(true); setShowBuyForm(false); setShowSettings(false); }}
           >
             <Droplets size={14} />
             Konsumsi Harian
@@ -177,7 +177,7 @@ export default function InventarisPage() {
           <Button
             id="btn-beli-pakan"
             size="sm"
-            onClick={() => { setShowBuyForm(!showBuyForm); setShowUsageForm(false); setShowSettings(false); }}
+            onClick={() => { setShowBuyForm(true); setShowUsageForm(false); setShowSettings(false); }}
           >
             <Plus size={14} />
             Beli Pakan
@@ -194,26 +194,14 @@ export default function InventarisPage() {
         />
       )}
 
-      {/* Panel Pengaturan Pemakaian Harian */}
-      {showSettings && (
-        <Card padding="md">
-          <div className="flex items-center gap-2 mb-4">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-orange-600"
-              style={{ background: 'rgba(234, 88, 12, 0.1)' }}
-            >
-              <Settings2 size={18} />
-            </div>
-            <div>
-              <h3 className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
-                Konfigurasi Parameter Estimasi Pakan
-              </h3>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                Tentukan dasar perhitungan sisa stok dan proyeksi hari habis
-              </p>
-            </div>
-          </div>
-
+      {/* Modal Pengaturan Pemakaian Harian */}
+      <Modal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        title="Konfigurasi Parameter Estimasi Pakan"
+        description="Tentukan dasar perhitungan sisa stok dan proyeksi hari habis"
+        maxWidth="lg"
+      >
           {/* Info current */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             <div className="p-3.5 rounded-lg border" style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-color)' }}>
@@ -391,8 +379,7 @@ export default function InventarisPage() {
               Tutup
             </Button>
           </div>
-        </Card>
-      )}
+      </Modal>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -481,148 +468,150 @@ export default function InventarisPage() {
         </Card>
       )}
 
-      {/* Buy Form */}
-      {showBuyForm && (
-        <Card padding="md">
-          <h3 className="font-bold text-sm mb-4" style={{ color: 'var(--text-primary)' }}>
-            Pencatatan Pembelian Stok Pakan
-          </h3>
-          <form onSubmit={handleBuySubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                id="buy-date"
-                label="Tanggal Kedatangan"
-                type="date"
-                value={buyForm.date}
-                onChange={e => setBuyForm({ ...buyForm, date: e.target.value })}
-                required
-              />
-              <Select
-                id="buy-type"
-                label="Jenis Pakan"
-                options={FEED_TYPES}
-                value={buyForm.feed_type}
-                onChange={e => setBuyForm({ ...buyForm, feed_type: e.target.value })}
-              />
-              <Input
-                id="buy-qty"
-                label="Jumlah (kg)"
-                type="number"
-                step="0.1"
-                placeholder="Contoh: 500"
-                value={buyForm.quantity_kg}
-                onChange={e => setBuyForm({ ...buyForm, quantity_kg: e.target.value })}
-                required
-              />
-              <Input
-                id="buy-price"
-                label="Harga Beli / kg (IDR)"
-                type="number"
-                placeholder="Contoh: 8500"
-                value={buyForm.price_per_kg}
-                onChange={e => setBuyForm({ ...buyForm, price_per_kg: e.target.value })}
-                required
-              />
-              <Input
-                id="buy-supplier"
-                label="Pemasok / Toko Pakan"
-                placeholder="Nama agen atau pabrik pakan"
-                value={buyForm.supplier}
-                onChange={e => setBuyForm({ ...buyForm, supplier: e.target.value })}
-              />
-              <div className="space-y-1.5">
-                <label className="block text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                  Total Biaya Pembelian
-                </label>
-                <div
-                  className="w-full px-3 py-2 rounded-lg text-sm border font-mono font-bold"
-                  style={{ background: 'rgba(5, 150, 105, 0.05)', borderColor: 'rgba(5, 150, 105, 0.3)', color: '#059669' }}
-                >
-                  {formatRupiah((parseFloat(buyForm.quantity_kg) || 0) * (parseFloat(buyForm.price_per_kg) || 0))}
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-2 pt-1">
-              <Button id="btn-simpan-beli" type="submit">Simpan Pembelian</Button>
-              <Button id="btn-batal-beli" variant="secondary" type="button" onClick={() => setShowBuyForm(false)}>
-                Batal
-              </Button>
-            </div>
-          </form>
-        </Card>
-      )}
-
-      {/* Usage Form */}
-      {showUsageForm && (
-        <Card padding="md">
-          <h3 className="font-bold text-sm mb-4" style={{ color: 'var(--text-primary)' }}>
-            Catat Konsumsi Pakan Harian
-          </h3>
-          <form onSubmit={handleUsageSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                id="usage-date"
-                label="Tanggal Konsumsi"
-                type="date"
-                value={usageForm.date}
-                onChange={e => setUsageForm({ ...usageForm, date: e.target.value })}
-                required
-              />
-              <div className="space-y-1.5">
-                <label htmlFor="usage-qty" className="block text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                  Jumlah Pakan Terpakai (kg)
-                </label>
-                <div className="relative">
-                  <input
-                    id="usage-qty"
-                    type="number"
-                    step="0.1"
-                    placeholder={`Standar: ${effectiveDailyUsage.toFixed(0)} kg`}
-                    value={usageForm.quantity_kg}
-                    onChange={e => setUsageForm({ ...usageForm, quantity_kg: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg text-sm border transition-all"
-                    style={{
-                      background: 'var(--bg-card)',
-                      color: 'var(--text-primary)',
-                      borderColor: 'var(--border-color)',
-                    }}
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setUsageForm({ ...usageForm, quantity_kg: String(effectiveDailyUsage.toFixed(1)) })}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-0.5 rounded font-medium border text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  >
-                    Gunakan {effectiveDailyUsage.toFixed(0)} kg
-                  </button>
-                </div>
-                {usageForm.quantity_kg && dailyUsageTarget !== null && (
-                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                    {parseFloat(usageForm.quantity_kg) > dailyUsageTarget
-                      ? `Selisih: +${(parseFloat(usageForm.quantity_kg) - dailyUsageTarget).toFixed(1)} kg di atas target`
-                      : parseFloat(usageForm.quantity_kg) < dailyUsageTarget
-                      ? `Selisih: -${(dailyUsageTarget - parseFloat(usageForm.quantity_kg)).toFixed(1)} kg di bawah target`
-                      : 'Tepat sesuai target pemakaian'}
-                  </p>
-                )}
-              </div>
-            </div>
+      {/* Modal Beli Pakan */}
+      <Modal
+        isOpen={showBuyForm}
+        onClose={() => setShowBuyForm(false)}
+        title="Pencatatan Pembelian Stok Pakan"
+        description="Isi data pembelian pakan baru yang masuk ke gudang"
+        maxWidth="lg"
+      >
+        <form onSubmit={handleBuySubmit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              id="usage-notes"
-              label="Keterangan / Catatan"
-              placeholder="Pemberian makan pagi & sore kandang layer..."
-              value={usageForm.notes}
-              onChange={e => setUsageForm({ ...usageForm, notes: e.target.value })}
+              id="buy-date"
+              label="Tanggal Kedatangan"
+              type="date"
+              value={buyForm.date}
+              onChange={e => setBuyForm({ ...buyForm, date: e.target.value })}
+              required
             />
-            <div className="flex gap-2 pt-1">
-              <Button id="btn-simpan-pemakaian" type="submit">Simpan Catatan</Button>
-              <Button id="btn-batal-pemakaian" variant="secondary" type="button" onClick={() => setShowUsageForm(false)}>
-                Batal
-              </Button>
+            <Select
+              id="buy-type"
+              label="Jenis Pakan"
+              options={FEED_TYPES}
+              value={buyForm.feed_type}
+              onChange={e => setBuyForm({ ...buyForm, feed_type: e.target.value })}
+            />
+            <Input
+              id="buy-qty"
+              label="Jumlah (kg)"
+              type="number"
+              step="0.1"
+              placeholder="Contoh: 500"
+              value={buyForm.quantity_kg}
+              onChange={e => setBuyForm({ ...buyForm, quantity_kg: e.target.value })}
+              required
+            />
+            <Input
+              id="buy-price"
+              label="Harga Beli / kg (IDR)"
+              type="number"
+              placeholder="Contoh: 8500"
+              value={buyForm.price_per_kg}
+              onChange={e => setBuyForm({ ...buyForm, price_per_kg: e.target.value })}
+              required
+            />
+            <Input
+              id="buy-supplier"
+              label="Pemasok / Toko Pakan"
+              placeholder="Nama agen atau pabrik pakan"
+              value={buyForm.supplier}
+              onChange={e => setBuyForm({ ...buyForm, supplier: e.target.value })}
+            />
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                Total Biaya Pembelian
+              </label>
+              <div
+                className="w-full px-3 py-2 rounded-lg text-sm border font-mono font-bold"
+                style={{ background: 'rgba(5, 150, 105, 0.05)', borderColor: 'rgba(5, 150, 105, 0.3)', color: '#059669' }}
+              >
+                {formatRupiah((parseFloat(buyForm.quantity_kg) || 0) * (parseFloat(buyForm.price_per_kg) || 0))}
+              </div>
             </div>
-          </form>
-        </Card>
-      )}
+          </div>
+          <div className="flex gap-2 pt-1">
+            <Button id="btn-simpan-beli" type="submit">Simpan Pembelian</Button>
+            <Button id="btn-batal-beli" variant="secondary" type="button" onClick={() => setShowBuyForm(false)}>
+              Batal
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal Konsumsi Harian */}
+      <Modal
+        isOpen={showUsageForm}
+        onClose={() => setShowUsageForm(false)}
+        title="Catat Konsumsi Pakan Harian"
+        description="Masukkan jumlah pakan yang dikonsumsi hari ini"
+        maxWidth="md"
+      >
+        <form onSubmit={handleUsageSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              id="usage-date"
+              label="Tanggal Konsumsi"
+              type="date"
+              value={usageForm.date}
+              onChange={e => setUsageForm({ ...usageForm, date: e.target.value })}
+              required
+            />
+            <div className="space-y-1.5">
+              <label htmlFor="usage-qty" className="block text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                Jumlah Pakan Terpakai (kg)
+              </label>
+              <div className="relative">
+                <input
+                  id="usage-qty"
+                  type="number"
+                  step="0.1"
+                  placeholder={`Standar: ${effectiveDailyUsage.toFixed(0)} kg`}
+                  value={usageForm.quantity_kg}
+                  onChange={e => setUsageForm({ ...usageForm, quantity_kg: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg text-sm border transition-all"
+                  style={{
+                    background: 'var(--bg-card)',
+                    color: 'var(--text-primary)',
+                    borderColor: 'var(--border-color)',
+                  }}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setUsageForm({ ...usageForm, quantity_kg: String(effectiveDailyUsage.toFixed(1)) })}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-xs px-2 py-0.5 rounded font-medium border text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  Gunakan {effectiveDailyUsage.toFixed(0)} kg
+                </button>
+              </div>
+              {usageForm.quantity_kg && dailyUsageTarget !== null && (
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                  {parseFloat(usageForm.quantity_kg) > dailyUsageTarget
+                    ? `Selisih: +${(parseFloat(usageForm.quantity_kg) - dailyUsageTarget).toFixed(1)} kg di atas target`
+                    : parseFloat(usageForm.quantity_kg) < dailyUsageTarget
+                    ? `Selisih: -${(dailyUsageTarget - parseFloat(usageForm.quantity_kg)).toFixed(1)} kg di bawah target`
+                    : 'Tepat sesuai target pemakaian'}
+                </p>
+              )}
+            </div>
+          </div>
+          <Input
+            id="usage-notes"
+            label="Keterangan / Catatan"
+            placeholder="Pemberian makan pagi & sore kandang layer..."
+            value={usageForm.notes}
+            onChange={e => setUsageForm({ ...usageForm, notes: e.target.value })}
+          />
+          <div className="flex gap-2 pt-1">
+            <Button id="btn-simpan-pemakaian" type="submit">Simpan Catatan</Button>
+            <Button id="btn-batal-pemakaian" variant="secondary" type="button" onClick={() => setShowUsageForm(false)}>
+              Batal
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Two tables: Inventory & Usage */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

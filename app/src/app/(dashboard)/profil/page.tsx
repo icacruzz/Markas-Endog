@@ -17,7 +17,7 @@ import {
   CheckCircle2,
   Layers,
 } from 'lucide-react';
-import { Card, Button, Input } from '@/components/ui';
+import { Card, Button, Input, Modal } from '@/components/ui';
 
 const initialProfile = {
   full_name: 'Ahmad Suryadi',
@@ -106,106 +106,47 @@ export default function ProfilPage() {
           </div>
 
           <div className="sm:ml-auto">
-            {editing ? (
-              <div className="flex gap-2">
-                <Button id="btn-save-profile" size="sm" onClick={handleSave}>
-                  <Save size={13} />
-                  Simpan
-                </Button>
-                <Button id="btn-cancel-edit" variant="secondary" size="sm" onClick={handleCancel}>
-                  <X size={13} />
-                  Batal
-                </Button>
-              </div>
-            ) : (
-              <Button id="btn-edit-profile" variant="outline" size="sm" onClick={() => setEditing(true)}>
-                <Edit3 size={13} />
-                Edit Profil
-              </Button>
-            )}
+            <Button id="btn-edit-profile" variant="outline" size="sm" onClick={() => setEditing(true)}>
+              <Edit3 size={13} />
+              Edit Profil
+            </Button>
           </div>
         </div>
 
         <div className="border-t mt-5 pt-5" style={{ borderColor: 'var(--border-color)' }}>
-          {editing ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                id="edit-name"
-                label="Nama Lengkap Penanggung Jawab"
-                value={draft.full_name}
-                onChange={e => setDraft({ ...draft, full_name: e.target.value })}
-              />
-              <Input
-                id="edit-farm"
-                label="Nama Usaha Peternakan"
-                value={draft.farm_name}
-                onChange={e => setDraft({ ...draft, farm_name: e.target.value })}
-              />
-              <Input
-                id="edit-phone"
-                label="Nomor Telepon / WhatsApp"
-                type="tel"
-                value={draft.phone}
-                onChange={e => setDraft({ ...draft, phone: e.target.value })}
-              />
-              <Input
-                id="edit-email"
-                label="Alamat Email Akun"
-                type="email"
-                value={draft.email}
-                onChange={e => setDraft({ ...draft, email: e.target.value })}
-              />
-              <Input
-                id="edit-chickens"
-                label="Populasi Ayam Layer (ekor)"
-                type="number"
-                value={draft.total_chickens}
-                onChange={e => setDraft({ ...draft, total_chickens: parseInt(e.target.value) || 0 })}
-              />
-              <div className="sm:col-span-2">
-                <Input
-                  id="edit-address"
-                  label="Lokasi Kandang Peternakan"
-                  value={draft.farm_address}
-                  onChange={e => setDraft({ ...draft, farm_address: e.target.value })}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[
-                { icon: User, label: 'Nama Lengkap', value: profile.full_name },
-                { icon: Building2, label: 'Nama Peternakan', value: profile.farm_name },
-                { icon: Phone, label: 'Nomor HP', value: profile.phone },
-                { icon: Mail, label: 'Email', value: profile.email },
-              ].map(({ icon: Icon, label, value }) => (
-                <div key={label} className="flex items-start gap-3">
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 text-orange-700 dark:text-orange-400"
-                    style={{ background: 'rgba(194,65,12,0.1)' }}
-                  >
-                    <Icon size={18} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-600 dark:text-slate-400">{label}</p>
-                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{value}</p>
-                  </div>
-                </div>
-              ))}
-              <div className="sm:col-span-2 flex items-start gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[
+              { icon: User, label: 'Nama Lengkap', value: profile.full_name },
+              { icon: Building2, label: 'Nama Peternakan', value: profile.farm_name },
+              { icon: Phone, label: 'Nomor HP', value: profile.phone },
+              { icon: Mail, label: 'Email', value: profile.email },
+            ].map(({ icon: Icon, label, value }) => (
+              <div key={label} className="flex items-start gap-3">
                 <div
                   className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 text-orange-700 dark:text-orange-400"
                   style={{ background: 'rgba(194,65,12,0.1)' }}
                 >
-                  <Building2 size={18} />
+                  <Icon size={18} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-600 dark:text-slate-400">Lokasi Kandang</p>
-                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{profile.farm_address}</p>
+                  <p className="text-xs font-bold text-slate-600 dark:text-slate-400">{label}</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{value}</p>
                 </div>
               </div>
+            ))}
+            <div className="sm:col-span-2 flex items-start gap-3">
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 text-orange-700 dark:text-orange-400"
+                style={{ background: 'rgba(194,65,12,0.1)' }}
+              >
+                <Building2 size={18} />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-600 dark:text-slate-400">Lokasi Kandang</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{profile.farm_address}</p>
+              </div>
             </div>
-          )}
+          </div>
         </div>
       </Card>
 
@@ -254,6 +195,71 @@ export default function ProfilPage() {
           ))}
         </div>
       </Card>
+
+      {/* Modal Edit Profil */}
+      <Modal
+        isOpen={editing}
+        onClose={handleCancel}
+        title="Edit Profil Peternakan"
+        description="Perbarui informasi data penanggung jawab dan peternakan"
+        maxWidth="md"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              id="edit-name"
+              label="Nama Lengkap Penanggung Jawab"
+              value={draft.full_name}
+              onChange={e => setDraft({ ...draft, full_name: e.target.value })}
+            />
+            <Input
+              id="edit-farm"
+              label="Nama Usaha Peternakan"
+              value={draft.farm_name}
+              onChange={e => setDraft({ ...draft, farm_name: e.target.value })}
+            />
+            <Input
+              id="edit-phone"
+              label="Nomor Telepon / WhatsApp"
+              type="tel"
+              value={draft.phone}
+              onChange={e => setDraft({ ...draft, phone: e.target.value })}
+            />
+            <Input
+              id="edit-email"
+              label="Alamat Email Akun"
+              type="email"
+              value={draft.email}
+              onChange={e => setDraft({ ...draft, email: e.target.value })}
+            />
+            <Input
+              id="edit-chickens"
+              label="Populasi Ayam Layer (ekor)"
+              type="number"
+              value={draft.total_chickens}
+              onChange={e => setDraft({ ...draft, total_chickens: parseInt(e.target.value) || 0 })}
+            />
+            <div className="sm:col-span-2">
+              <Input
+                id="edit-address"
+                label="Lokasi Kandang Peternakan"
+                value={draft.farm_address}
+                onChange={e => setDraft({ ...draft, farm_address: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
+            <Button id="btn-save-profile" size="sm" onClick={handleSave}>
+              <Save size={13} />
+              Simpan Perubahan
+            </Button>
+            <Button id="btn-cancel-edit" variant="secondary" size="sm" onClick={handleCancel}>
+              <X size={13} />
+              Batal
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Logout button */}
       <div className="flex justify-end">
