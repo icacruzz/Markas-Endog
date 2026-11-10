@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   User,
   Building2,
@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { Card, Button, Input, Modal } from '@/components/ui';
 
+const STORAGE_KEY = 'markas_endog_profile';
+
 const initialProfile = {
   full_name: 'Ahmad Suryadi',
   farm_name: 'Peternakan Markas Endog',
@@ -34,8 +36,26 @@ export default function ProfilPage() {
   const [draft, setDraft] = useState(initialProfile);
   const [saved, setSaved] = useState(false);
 
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setProfile(parsed);
+        setDraft(parsed);
+      }
+    } catch {
+      // ponytail: ignore localStorage error, fallback to initialProfile
+    }
+  }, []);
+
   const handleSave = () => {
     setProfile(draft);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+    } catch {
+      // ponytail: ignore quota or storage disabled errors
+    }
     setEditing(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
