@@ -17,45 +17,22 @@ import {
   CheckCircle2,
   Layers,
 } from 'lucide-react';
+import { useAppState } from '@/lib/AppState';
+import { getInitials } from '@/lib/utils';
 import { Card, Button, Input, Modal } from '@/components/ui';
 
-const STORAGE_KEY = 'markas_endog_profile';
-
-const initialProfile = {
-  full_name: 'Ahmad Suryadi',
-  farm_name: 'Peternakan Markas Endog',
-  farm_address: 'Jl. Kandang Raya No. 12, Desa Sukamaju, Bandung, Jawa Barat',
-  phone: '08123456789',
-  email: 'admin@markasendog.com',
-  total_chickens: 2500,
-};
-
 export default function ProfilPage() {
-  const [profile, setProfile] = useState(initialProfile);
+  const { profile, updateProfile } = useAppState();
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(initialProfile);
+  const [draft, setDraft] = useState(profile);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setProfile(parsed);
-        setDraft(parsed);
-      }
-    } catch {
-      // ponytail: ignore localStorage error, fallback to initialProfile
-    }
-  }, []);
+    setDraft(profile);
+  }, [profile]);
 
   const handleSave = () => {
-    setProfile(draft);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-    } catch {
-      // ponytail: ignore quota or storage disabled errors
-    }
+    updateProfile(draft);
     setEditing(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
@@ -89,9 +66,10 @@ export default function ProfilPage() {
               className="w-16 h-16 rounded-xl flex items-center justify-center text-white text-xl font-bold shadow-sm flex-shrink-0"
               style={{ background: '#ea580c' }}
             >
-              AS
+              {getInitials(profile.full_name)}
             </div>
             {!editing && (
+
               <button
                 id="edit-avatar-btn"
                 className="absolute -bottom-1 -right-1 w-6 h-6 rounded-md flex items-center justify-center shadow-sm text-slate-500 hover:text-slate-800"

@@ -104,3 +104,15 @@ export function truncate(text: string, length: number): string {
   if (text.length <= length) return text;
   return text.substring(0, length) + '...';
 }
+
+/**
+ * Buat inisial 2 huruf dari nama
+ */
+export function getInitials(name: string): string {
+  if (!name) return 'ME';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'ME';
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+

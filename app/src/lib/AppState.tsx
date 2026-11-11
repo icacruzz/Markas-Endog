@@ -64,6 +64,23 @@ interface AppStateContextType {
   feedUsages: FeedUsage[];
   transactions: Transaction[];
   marketPrices: MarketPrice[];
+  // Profil peternakan & admin
+  profile: {
+    full_name: string;
+    farm_name: string;
+    farm_address: string;
+    phone: string;
+    email: string;
+    total_chickens: number;
+  };
+  updateProfile: (data: Partial<{
+    full_name: string;
+    farm_name: string;
+    farm_address: string;
+    phone: string;
+    email: string;
+    total_chickens: number;
+  }>) => void;
   // Pengaturan pemakaian harian
   dailyUsageTarget: number | null;   // null = otomatis dari rata-rata
   setDailyUsageTarget: (val: number | null) => void;
@@ -77,7 +94,19 @@ interface AppStateContextType {
   getAutoAvgDailyUsage: () => number; // selalu rata-rata historis murni
 }
 
+
 const AppStateContext = createContext<AppStateContextType | null>(null);
+
+const STORAGE_KEY = 'markas_endog_profile';
+
+const initialProfile = {
+  full_name: 'Suprapto',
+  farm_name: 'Peternakan Markas Endog',
+  farm_address: 'Jl. Kandang Raya No. 12, Desa Sukamaju, Bandung, Jawa Barat',
+  phone: '0818376217',
+  email: 'admin@markasendog.com',
+  total_chickens: 2500,
+};
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [productions, setProductions] = useState<EggProduction[]>(initialProductions);
@@ -87,6 +116,32 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [marketPrices, setMarketPrices] = useState<MarketPrice[]>(initialMarketPrices);
   // null = mode otomatis (rata-rata historis), angka = target manual
   const [dailyUsageTarget, setDailyUsageTarget] = useState<number | null>(null);
+
+  const [profile, setProfile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) return { ...initialProfile, ...JSON.parse(stored) };
+      } catch {
+        // ponytail: ignore storage read error
+      }
+    }
+    return initialProfile;
+  });
+
+  const updateProfile = (data: Partial<typeof initialProfile>) => {
+    setProfile((prev) => {
+      const updated = { ...prev, ...data };
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        } catch {
+          // ponytail: ignore storage write error
+        }
+      }
+      return updated;
+    });
+  };
 
   const getFeedStockKg = () => {
     const totalIn = feedInventory.reduce((s, f) => s + f.quantity_kg, 0);
@@ -167,6 +222,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       feedUsages,
       transactions,
       marketPrices,
+      profile,
+      updateProfile,
       dailyUsageTarget,
       setDailyUsageTarget,
       addProduction,

@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useTheme } from './ThemeProvider';
+import { useAppState } from '@/lib/AppState';
+import { getInitials } from '@/lib/utils';
 import { Menu, Sun, Moon, Calendar } from 'lucide-react';
 
 interface TopbarProps {
@@ -12,6 +14,7 @@ interface TopbarProps {
 
 export default function Topbar({ onMenuClick, title, subtitle }: TopbarProps) {
   const { theme, toggleTheme } = useTheme();
+  const { profile } = useAppState();
 
   const formattedDate = new Date().toLocaleDateString('id-ID', {
     weekday: 'short',
@@ -19,6 +22,9 @@ export default function Topbar({ onMenuClick, title, subtitle }: TopbarProps) {
     month: 'short',
     year: 'numeric',
   });
+
+  const initials = getInitials(profile?.full_name || 'Admin');
+  const displayName = profile?.full_name || 'Admin';
 
   return (
     <header
@@ -89,13 +95,13 @@ export default function Topbar({ onMenuClick, title, subtitle }: TopbarProps) {
           title="Buka Profil Peternakan"
         >
           <div className="w-8 h-8 rounded-lg bg-orange-600 text-white flex items-center justify-center text-xs font-bold shadow-xs flex-shrink-0">
-            AS
+            {initials}
           </div>
           <div className="hidden sm:block leading-tight text-left">
-            <span className="text-xs font-semibold block text-slate-900 dark:text-slate-100">
-              Pak Ahmad
+            <span className="text-xs font-semibold block text-slate-900 dark:text-slate-100 truncate max-w-[120px]">
+              {displayName}
             </span>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate max-w-[120px]">
               Pemilik Kandang
             </span>
           </div>
@@ -104,3 +110,4 @@ export default function Topbar({ onMenuClick, title, subtitle }: TopbarProps) {
     </header>
   );
 }
+
