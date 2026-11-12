@@ -117,7 +117,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   // null = mode otomatis (rata-rata historis), angka = target manual
   const [dailyUsageTarget, setDailyUsageTarget] = useState<number | null>(null);
 
-  const [profile, setProfile] = useState(() => {
+  const [profile, setProfile] = useState<typeof initialProfile>(() => {
     if (typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem(STORAGE_KEY);
