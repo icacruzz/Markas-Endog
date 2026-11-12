@@ -6,5 +6,7 @@ if (!databaseUrl && typeof window === 'undefined' && process.env.NODE_ENV !== 'p
   console.warn('DATABASE_URL is not set. Database queries may fail.');
 }
 
-export const sql = neon(databaseUrl);
+// Safe fallback when DATABASE_URL is missing during build time
+const safeUrl = databaseUrl || 'postgresql://placeholder:placeholder@ep-placeholder.us-east-2.aws.neon.tech/neondb';
+export const sql = neon(safeUrl);
 export default sql;
